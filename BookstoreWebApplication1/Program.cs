@@ -19,6 +19,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+// book endpoints 
 
 app.MapGet("/books", async (ApplicationDbContext db) =>
     await db.Books.ToListAsync());
@@ -60,6 +61,52 @@ app.MapPut("/books/{id}", async (int id, Book inputBook, ApplicationDbContext db
     book.Stock = inputBook.Stock;
     book.Format = inputBook.Format;
     book.Genre = inputBook.Genre;
+
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
+});
+
+
+
+// user endpoints 
+
+app.MapGet("/users", async (ApplicationDbContext db) =>
+    await db.Users.ToListAsync());
+
+app.MapGet("/users/{id}", async (int id, ApplicationDbContext db) =>
+    await db.Users.FindAsync(id)
+        is User user
+            ? Results.Ok(user)
+            : Results.NotFound());
+
+app.MapPost("/users", async (User user, ApplicationDbContext db) =>
+{
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/users/{user.Id}", user);
+});
+
+app.MapDelete("/users/{id}", async (int id, ApplicationDbContext db) =>
+{
+    if (await db.Users.FindAsync(id) is User user)
+    {
+        db.Users.Remove(user);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+    return Results.NotFound();
+});
+
+app.MapPut("/users/{id}", async (int id, User inputUser, ApplicationDbContext db) =>
+{
+    var user = await db.Users.FindAsync(id);
+
+    if (user is null) return Results.NotFound();
+
+    user.Name = inputUser.Name;
+    user.Email = inputUser.Email;
+    user.Password = inputUser.Password;
 
     await db.SaveChangesAsync();
 
