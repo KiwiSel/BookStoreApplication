@@ -91,7 +91,7 @@ namespace BookstoreWebApplication1.Migrations
                     b.Property<int>("BookId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OrderId")
+                    b.Property<int?>("OrderId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
@@ -134,7 +134,7 @@ namespace BookstoreWebApplication1.Migrations
             modelBuilder.Entity("BookstoreWebApplication1.Models.Order", b =>
                 {
                     b.HasOne("BookstoreWebApplication1.Models.User", "User")
-                        .WithMany("Orders")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -150,25 +150,16 @@ namespace BookstoreWebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BookstoreWebApplication1.Models.Order", "Order")
+                    b.HasOne("BookstoreWebApplication1.Models.Order", null)
                         .WithMany("OrderItems")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("OrderId");
 
                     b.Navigation("Book");
-
-                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("BookstoreWebApplication1.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("BookstoreWebApplication1.Models.User", b =>
-                {
-                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }
