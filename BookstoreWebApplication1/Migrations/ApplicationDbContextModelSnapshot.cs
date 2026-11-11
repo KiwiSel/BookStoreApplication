@@ -22,6 +22,49 @@ namespace BookstoreWebApplication1.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BookstoreWebApplication1.Models.Basket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Baskets");
+                });
+
+            modelBuilder.Entity("BookstoreWebApplication1.Models.BasketItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BasketId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasketId");
+
+                    b.ToTable("BasketItems");
+                });
+
             modelBuilder.Entity("BookstoreWebApplication1.Models.Book", b =>
                 {
                     b.Property<int>("Id")
@@ -127,6 +170,15 @@ namespace BookstoreWebApplication1.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("BookstoreWebApplication1.Models.BasketItem", b =>
+                {
+                    b.HasOne("BookstoreWebApplication1.Models.Basket", null)
+                        .WithMany("BasketItems")
+                        .HasForeignKey("BasketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BookstoreWebApplication1.Models.OrderItem", b =>
                 {
                     b.HasOne("BookstoreWebApplication1.Models.Order", null)
@@ -134,6 +186,11 @@ namespace BookstoreWebApplication1.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BookstoreWebApplication1.Models.Basket", b =>
+                {
+                    b.Navigation("BasketItems");
                 });
 
             modelBuilder.Entity("BookstoreWebApplication1.Models.Order", b =>
