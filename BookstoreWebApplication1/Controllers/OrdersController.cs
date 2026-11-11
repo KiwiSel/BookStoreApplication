@@ -36,24 +36,26 @@ namespace BookstoreWebApplication1.Controllers
         return Ok(order);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<Order>> CreateOrder(Order inputOrder) {
-        var user = await _db.Users.FindAsync(inputOrder.UserId); 
+    [HttpPost("{basketId}")]
+    public async Task<ActionResult<Order>> CreateOrder(int basketId) {
+        var basket = await _db.Baskets.Include(b => b.BasketItems).SingleOrDefaultAsync(b => b.Id == basketId);
 
-        // check valid request
+        if (basket == null) return NotFound();
+        if (basket.BasketItems == null) return BadRequest();
+
+        var user = await _db.Users.FindAsync(basket.UserId); 
+
         if (user == null) return NotFound();
-        if (inputOrder.OrderItems == null) return BadRequest();
 
-        var bookIds = inputOrder.OrderItems.Select(item => item.BookId).Distinct().ToList();
+        var bookIds = basket.BasketItems.Select(item => item.BookId).Distinct().ToList();
         var books = await _db.Books.Where(book => bookIds.Contains(book.Id)).ToListAsync();
 
         var order = new Order
             {
-                UserId = inputOrder.UserId,
-                OrderDate = inputOrder.OrderDate
+                UserId = basket.UserId
             };
 
-        foreach (var item in inputOrder.OrderItems)
+        foreach (var item in basket.BasketItems)
             {
                 var book = await _db.Books.FindAsync(item.BookId); 
                 if (book == null) return NotFound(); // book does not exist
@@ -68,6 +70,8 @@ namespace BookstoreWebApplication1.Controllers
                 // _db.OrderItems.Add(orderItem); 
                 order.OrderItems.Add(orderItem);
             }
+
+        basket.BasketItems.Clear();
 
         _db.Orders.Add(order); 
         await _db.SaveChangesAsync(); 
