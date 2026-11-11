@@ -17,9 +17,21 @@ namespace BookstoreWebApplication1.Controllers
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Book>>> GetAllBooks()
+    public async Task<ActionResult<IEnumerable<Book>>> GetAllBooks(string? author,  string? isbn, string? name, 
+        double? maxPrice, int? format, int? genre, bool available = false)
     {
-        return await _db.Books.ToListAsync();
+        var books = _db.Books.AsQueryable();
+        
+
+        if (!string.IsNullOrWhiteSpace(isbn) ) books = books.Where(b => b.ISBN.Equals(isbn));
+        if (!string.IsNullOrWhiteSpace(author)) books = books.Where(b => b.Author.ToLower().Replace(" ", "").Contains(author.ToLower().Replace(" ", "")));
+        if (!string.IsNullOrWhiteSpace(name)) books = books.Where(b => b.Name.ToLower().Replace(" ", "").Contains(name.ToLower().Replace(" ", "")));
+        if (format != null) books = books.Where(b => b.Format == (BookFormat) format);
+        if (genre != null) books = books.Where(b => b.Genre == (BookGenre) genre);
+        if (maxPrice != null) books = books.Where(b => b.Price <= maxPrice);
+        if (available) books = books.Where(b => b.Stock > 0);
+
+        return Ok(await books.ToListAsync());
     }
 
     [HttpGet("{id}")]

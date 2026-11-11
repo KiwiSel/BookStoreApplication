@@ -55,7 +55,8 @@ namespace BookstoreWebApplication1.Controllers
 
         foreach (var item in inputOrder.OrderItems)
             {
-                var book = books.First(b => b.Id == item.BookId);
+                var book = await _db.Books.FindAsync(item.BookId); 
+                if (book == null) return NotFound(); // book does not exist
                 if (book.Stock < item.Quantity) return BadRequest(); // book out of stock
 
                 var orderItem = new OrderItem
@@ -63,7 +64,8 @@ namespace BookstoreWebApplication1.Controllers
                     BookId = book.Id,
                     Quantity = item.Quantity
                 };
-                _db.OrderItems.Add(orderItem); 
+                book.Stock -= item.Quantity;
+                // _db.OrderItems.Add(orderItem); 
                 order.OrderItems.Add(orderItem);
             }
 
