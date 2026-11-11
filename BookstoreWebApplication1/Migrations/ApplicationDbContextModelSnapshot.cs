@@ -75,8 +75,6 @@ namespace BookstoreWebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("Orders");
                 });
 
@@ -91,15 +89,13 @@ namespace BookstoreWebApplication1.Migrations
                     b.Property<int>("BookId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("OrderId")
+                    b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BookId");
 
                     b.HasIndex("OrderId");
 
@@ -131,30 +127,13 @@ namespace BookstoreWebApplication1.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("BookstoreWebApplication1.Models.Order", b =>
-                {
-                    b.HasOne("BookstoreWebApplication1.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BookstoreWebApplication1.Models.OrderItem", b =>
                 {
-                    b.HasOne("BookstoreWebApplication1.Models.Book", "Book")
-                        .WithMany()
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BookstoreWebApplication1.Models.Order", null)
                         .WithMany("OrderItems")
-                        .HasForeignKey("OrderId");
-
-                    b.Navigation("Book");
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BookstoreWebApplication1.Models.Order", b =>

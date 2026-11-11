@@ -17,9 +17,16 @@ namespace BookstoreWebApplication1.Controllers
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetAllOrders()
+    public async Task<ActionResult<IEnumerable<Order>>> GetAllOrders(int? userId)
     {
-        return await _db.Orders.ToListAsync();
+
+        if (userId != null)
+            {
+                var orders = from o in _db.Orders select o;
+                orders = orders.Where(o => o.UserId == userId);
+                return await orders.Include(o => o.OrderItems).ToListAsync();
+            }
+        return await _db.Orders.Include(o => o.OrderItems).ToListAsync();
     }
 
     [HttpGet("{id}")]
@@ -30,7 +37,36 @@ namespace BookstoreWebApplication1.Controllers
     }
 
     [HttpPost]
-    public async Task<ActionResult<Order>> CreateOrder(Order order) {
+    public async Task<ActionResult<Order>> CreateOrder(Order inputOrder) {
+        var user = await _db.Users.FindAsync(inputOrder.UserId); 
+
+        // check valid request
+        if (user == null) return NotFound();
+        if (inputOrder.OrderItems == null) return BadRequest();
+
+        var bookIds = inputOrder.OrderItems.Select(item => item.BookId).Distinct().ToList();
+        var books = await _db.Books.Where(book => bookIds.Contains(book.Id)).ToListAsync();
+
+        var order = new Order
+            {
+                UserId = inputOrder.UserId,
+                OrderDate = inputOrder.OrderDate
+            };
+
+        foreach (var item in inputOrder.OrderItems)
+            {
+                var book = books.First(b => b.Id == item.BookId);
+                if (book.Stock < item.Quantity) return BadRequest(); // book out of stock
+
+                var orderItem = new OrderItem
+                {
+                    BookId = book.Id,
+                    Quantity = item.Quantity
+                };
+                _db.OrderItems.Add(orderItem); 
+                order.OrderItems.Add(orderItem);
+            }
+
         _db.Orders.Add(order); 
         await _db.SaveChangesAsync(); 
         return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);        

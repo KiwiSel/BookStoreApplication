@@ -7,9 +7,9 @@ namespace BookstoreWebApplication1.Models
         public int Id { get; set; }
         [Required]
         public int BookId { get; set; } // foreign key
-        public Book Book { get; set; } = null!;
+        // public Book Book { get; set; } = null!;
         // [Required]
-        // public int OrderId { get; set; } // foreign key
+        public int OrderId { get; set; } // foreign key
         // public Order Order { get; set; } = null!;
         // [Required]
         public int Quantity { get; set; }
