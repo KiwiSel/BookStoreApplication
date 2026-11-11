@@ -32,6 +32,7 @@ namespace BookstoreWebApplication1.Controllers
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user) {
         _db.Users.Add(user); 
+        await _db.SaveChangesAsync(); 
         var basket = new Basket
         {
             UserId = user.Id,
