@@ -40,12 +40,12 @@ namespace BookstoreWebApplication1.Controllers
     public async Task<ActionResult<Order>> CreateOrder(int basketId) {
         var basket = await _db.Baskets.Include(b => b.BasketItems).SingleOrDefaultAsync(b => b.Id == basketId);
 
-        if (basket == null) return NotFound();
-        if (basket.BasketItems == null) return BadRequest();
+        if (basket == null) return NotFound("User does not have a configured basket");
+        if (basket.BasketItems == null) return BadRequest("No items selected to purchase");
 
         var user = await _db.Users.FindAsync(basket.UserId); 
 
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("User invalid");
 
         var bookIds = basket.BasketItems.Select(item => item.BookId).Distinct().ToList();
         var books = await _db.Books.Where(book => bookIds.Contains(book.Id)).ToListAsync();
@@ -58,17 +58,19 @@ namespace BookstoreWebApplication1.Controllers
         foreach (var item in basket.BasketItems)
             {
                 var book = await _db.Books.FindAsync(item.BookId); 
-                if (book == null) return NotFound(); // book does not exist
-                if (book.Stock < item.Quantity) return BadRequest(); // book out of stock
+                if (book == null) return NotFound("Book does not exist"); // book does not exist
+                if (book.Stock < item.Quantity) return BadRequest("No longer in stock"); // book out of stock
 
                 var orderItem = new OrderItem
                 {
                     BookId = book.Id,
-                    Quantity = item.Quantity
+                    Quantity = item.Quantity,
+                    Price = book.Price * item.Quantity
                 };
                 book.Stock -= item.Quantity;
                 // _db.OrderItems.Add(orderItem); 
                 order.OrderItems.Add(orderItem);
+                order.Price += orderItem.Price;
             }
 
         basket.BasketItems.Clear();

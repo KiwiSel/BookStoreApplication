@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BookstoreWebApplication1.Models;
 using BookstoreWebApplication1.Data;
+using BookstoreWebApplication1.DTOs;
 
 namespace BookstoreWebApplication1.Controllers
 {
@@ -61,19 +62,21 @@ namespace BookstoreWebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Book>> PutBook(int id, Book inputBook)
+        public async Task<ActionResult<Book>> PutBook(int id, BookDto inputBook)
         {
             var book = await _db.Books.FindAsync(id);
-            if (book is null) return NotFound();
-            book.Name = inputBook.Name;
-            book.Author = inputBook.Author;
-            book.ISBN = inputBook.ISBN;
-            book.Price = inputBook.Price;
-            book.Stock = inputBook.Stock;
-            book.Format = inputBook.Format;
-            book.Genre = inputBook.Genre;
-            await _db.SaveChangesAsync();
 
+            if (book is null) return NotFound();
+
+            if (!string.IsNullOrWhiteSpace(inputBook.Name)) book.Name = inputBook.Name;
+            if (!string.IsNullOrWhiteSpace(inputBook.Author)) book.Author = inputBook.Author;
+            if (!string.IsNullOrWhiteSpace(inputBook.ISBN)) book.ISBN = inputBook.ISBN;
+            if (inputBook.Price != null) book.Price = (double) inputBook.Price;
+            if (inputBook.Stock != null) book.Stock = (int) inputBook.Stock;
+            if (inputBook.Format != null) book.Format = (BookFormat) inputBook.Format;
+            if (inputBook.Genre != null) book.Genre = (BookGenre) inputBook.Genre;
+
+            await _db.SaveChangesAsync();
             return NoContent();
         }
 

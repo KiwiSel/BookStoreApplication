@@ -113,6 +113,9 @@ namespace BookstoreWebApplication1.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<double>("Price")
+                        .HasColumnType("double precision");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
@@ -134,6 +137,9 @@ namespace BookstoreWebApplication1.Migrations
 
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");

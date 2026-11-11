@@ -13,5 +13,7 @@ namespace BookstoreWebApplication1.Models
         // public Order Order { get; set; } = null!;
         // [Required]
         public int Quantity { get; set; }
+
+        public double Price { get; set; }
     }
 }
