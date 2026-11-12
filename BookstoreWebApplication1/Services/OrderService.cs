@@ -63,6 +63,8 @@ public class OrderService : IOrderService
 
     public async Task<ServiceError> CreateOrder(int basketId)
     {
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
         var basket = await _db.Baskets.Include(b => b.BasketItems).SingleOrDefaultAsync(b => b.Id == basketId);
         if (basket == null) return ServiceError.BasketNotFound;
         if (basket.BasketItems == null || !basket.BasketItems.Any()) return ServiceError.EmptyBasket;
@@ -73,32 +75,37 @@ public class OrderService : IOrderService
 
         var order = new Order
             {
-                UserId = basket.UserId
+                UserId = basket.UserId,
+                OrderDate = DateTime.Now
             };
 
         foreach (var item in basket.BasketItems)
             {
-                var book = await _db.Books.FindAsync(item.BookId); 
+                var book = await _db.Books.AsNoTracking().SingleOrDefaultAsync(b => b.Id == item.BookId); 
                 if (book == null) return ServiceError.BookNotFound;
-                if (book.Stock < item.Quantity) return ServiceError.InsufficientStock;
-
+   
+                var updated = await _db.Books.Where(b => b.Id == item.BookId && b.Stock >= item.Quantity).
+                    ExecuteUpdateAsync(setters => setters.SetProperty(b => b.Stock, b => b.Stock - item.Quantity));
+                if (updated == 0) return ServiceError.InsufficientStock;
+                
                 var orderItem = new OrderItem
                 {
                     BookId = book.Id,
                     Quantity = item.Quantity,
                     Price = book.Price * item.Quantity
                 };
-                book.Stock -= item.Quantity;
                 // _db.OrderItems.Add(orderItem); 
                 order.OrderItems.Add(orderItem);
                 order.Price += orderItem.Price;
-                order.OrderDate = DateTime.Now;
             }
 
         basket.BasketItems.Clear();
 
         _db.Orders.Add(order); 
+
         await _db.SaveChangesAsync(); 
+        await transaction.CommitAsync();
+
         return ServiceError.None;
         
     }
