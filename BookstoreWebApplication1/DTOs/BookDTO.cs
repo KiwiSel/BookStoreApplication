@@ -2,7 +2,7 @@ using BookstoreWebApplication1.Models;
 
 namespace BookstoreWebApplication1.DTOs
 {
-    public class BookDto
+    public class BookDTO
     {
         public string? Name { get; set; }
         public string? Author { get; set; }

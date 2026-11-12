@@ -2,106 +2,76 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BookstoreWebApplication1.Models;
 using BookstoreWebApplication1.Data;
+using BookstoreWebApplication1.DTOs;
+using BookstoreWebApplication1.Services;
+using BookstoreWebApplication1.Enums;
 
 namespace BookstoreWebApplication1.Controllers
 {
+    
     [ApiController]
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IOrderService _orderService;
 
-         public OrdersController(ApplicationDbContext db)
+         public OrdersController(IOrderService orderService)
     {
-        _db = db;
+        _orderService = orderService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetAllOrders(int? userId)
-    {
-
-        if (userId != null)
-            {
-                var orders = from o in _db.Orders select o;
-                orders = orders.Where(o => o.UserId == userId);
-                return await orders.Include(o => o.OrderItems).ToListAsync();
-            }
-        return await _db.Orders.Include(o => o.OrderItems).ToListAsync();
-    }
+    public async Task<ActionResult<IEnumerable<Order>>> GetAllOrders(int? userId) {
+        var orders = await _orderService.GetAllOrders(userId);
+        if (orders == null) return NotFound();
+        return Ok(orders);
+        }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Order>> GetOrder(int id) {
-        var order = await _db.Orders.FindAsync(id);
+        var order = await _orderService.GetOrder(id);
         if (order is null) return NotFound();
         return Ok(order);
     }
 
+
     [HttpPost("{basketId}")]
     public async Task<ActionResult<Order>> CreateOrder(int basketId) {
-        var basket = await _db.Baskets.Include(b => b.BasketItems).SingleOrDefaultAsync(b => b.Id == basketId);
 
-        if (basket == null) return NotFound("User does not have a configured basket");
-        if (basket.BasketItems == null) return BadRequest("No items selected to purchase");
-
-        var user = await _db.Users.FindAsync(basket.UserId); 
-
-        if (user == null) return NotFound("User invalid");
-
-        var bookIds = basket.BasketItems.Select(item => item.BookId).Distinct().ToList();
-        var books = await _db.Books.Where(book => bookIds.Contains(book.Id)).ToListAsync();
-
-        var order = new Order
+        var result = await _orderService.CreateOrder(basketId);
+        switch (result)
             {
-                UserId = basket.UserId
-            };
+                case ServiceError.None:
+                    return Created();
+                case ServiceError.BasketNotFound:
+                        return NotFound("User does not have a configured basket");
+                case ServiceError.EmptyBasket:
+                    return BadRequest("No items selected to purchase");
+                case ServiceError.UserNotFound:
+                    return NotFound("User invalid");
+                case ServiceError.BookNotFound:
+                    return NotFound("Book does not exist");
+                case ServiceError.InsufficientStock:
+                    return BadRequest("No longer in stock");
+                default:
+                    return BadRequest("Something went wrong");
 
-        foreach (var item in basket.BasketItems)
-            {
-                var book = await _db.Books.FindAsync(item.BookId); 
-                if (book == null) return NotFound("Book does not exist"); // book does not exist
-                if (book.Stock < item.Quantity) return BadRequest("No longer in stock"); // book out of stock
-
-                var orderItem = new OrderItem
-                {
-                    BookId = book.Id,
-                    Quantity = item.Quantity,
-                    Price = book.Price * item.Quantity
-                };
-                book.Stock -= item.Quantity;
-                // _db.OrderItems.Add(orderItem); 
-                order.OrderItems.Add(orderItem);
-                order.Price += orderItem.Price;
             }
-
-        basket.BasketItems.Clear();
-
-        _db.Orders.Add(order); 
-        await _db.SaveChangesAsync(); 
-        return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);        
     }
 
     [HttpDelete("{id}")]
     public async Task<ActionResult<Order>> DeleteOrder(int id)
         {
-            if (await _db.Orders.FindAsync(id) is Order order)
-            {
-                _db.Orders.Remove(order);
-                await _db.SaveChangesAsync();
-                return NoContent();
-            }
+            bool deleted = await _orderService.DeleteOrder(id);
+            if (deleted) return NoContent();
             return NotFound();
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Order>> PutOrder(int id, Order inputOrder)
-        {
-            var order = await _db.Orders.FindAsync(id);
-            if (order is null) return NotFound();
-            order.OrderDate = inputOrder.OrderDate;
-            order.OrderItems = inputOrder.OrderItems;
-            await _db.SaveChangesAsync();
-
-            return NoContent();
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Order>> PutOrder(int id, OrderDTO inputOrder) {
+        var result = await _orderService.UpdateOrder(id, inputOrder);
+        if (result.Equals(ServiceError.OrderNotFound)) return NotFound();
+        return NoContent();
         }
 
     }
