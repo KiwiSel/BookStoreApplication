@@ -11,6 +11,8 @@ namespace BookstoreWebApplication1.Models
         public string Email { get; set; } = null!;
         [Required]
         public string Password { get; set; } = null!;
+
+        public string Role { get; set; } = "Customer";
         // public ICollection<Order> Orders { get; set; } = new List<Order>();
 
     }
