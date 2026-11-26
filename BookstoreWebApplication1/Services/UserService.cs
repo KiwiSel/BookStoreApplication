@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using BookstoreWebApplication1.DTOs;
 using BookstoreWebApplication1.Models;
 using BookstoreWebApplication1.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace BookstoreWebApplication1.Services;
 public interface IUserService
@@ -17,10 +18,11 @@ public interface IUserService
 public class UserService : IUserService
 {
     private readonly ApplicationDbContext _db;
-    public UserService(ApplicationDbContext db)
-    {
-        _db = db;
-    }
+    private readonly IPasswordHasher<User> _passwordHasher;
+public UserService( ApplicationDbContext db, IPasswordHasher<User> passwordHasher) {
+    _db = db;
+    _passwordHasher = passwordHasher;
+}
 
     public async Task<User?> GetUser(int userId)
     {
@@ -60,7 +62,9 @@ public class UserService : IUserService
 
     public async Task<ServiceError> CreateUser(User user)
     {
-        _db.Users.Add(user); 
+        user.Password = _passwordHasher.HashPassword(user, user.Password);
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
         await _db.SaveChangesAsync(); 
         var basket = new Basket
         {
